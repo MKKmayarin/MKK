@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建築計算ツール</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <h1>建築速度計算ツール</h1>
+
+    <label for="buildingType">建築物選択:</label>
+    <select id="buildingType">
+        <option value="barracks">兵舎</option>
+        <option value="foundry">溶解炉</option>
+        <option value="hq">司令部</option>
+        <option value="research">科学研究所</option>
+        <option value="embassy">大使館</option>
+        <option value="storage">倉庫</option>
+        <option value="wall">城壁</option>
+    </select>
+
+    <br><br>
+
+    <label for="currentLevel">現在レベル:</label>
+    <input type="number" id="currentLevel" min="1" value="25">
+
+    <br><br>
+
+    <label for="speedBoost">建築速度加速(%):</label>
+    <input type="number" id="speedBoost" min="0" value="70">
+
+    <br><br>
+
+    <label for="buff">バフ選択:</label>
+    <select id="buff">
+        <option value="0">なし</option>
+        <option value="10">+10%</option>
+        <option value="20">+20%</option>
+    </select>
+
+    <br><br>
+
+    <label for="petSkill">ペットスキルレベル:</label>
+    <select id="petSkill">
+        <option value="1">1 (5%)</option>
+        <option value="2">2 (7%)</option>
+        <option value="3">3 (9%)</option>
+        <option value="4">4 (12%)</option>
+        <option value="5">5 (15%)</option>
+    </select>
+
+    <br><br>
+
+    <label for="jinmanSkill">ジンマンスキルレベル:</label>
+    <select id="jinmanSkill">
+        <option value="1">1 (3%)</option>
+        <option value="2">2 (6%)</option>
+        <option value="3">3 (9%)</option>
+        <option value="4">4 (12%)</option>
+        <option value="5">5 (15%)</option>
+    </select>
+
+    <br><br>
+
+    <button onclick="calculate()">計算する</button>
+
+    <br><br>
+
+    <div id="result"></div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
