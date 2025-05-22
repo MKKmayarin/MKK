@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>ホワイトアウトサバイバル：レベルアップ計算機</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    h1, h2 {
+      color: #0066cc;
+    }
+    label {
+      display: block;
+      margin: 10px 0;
+    }
+    select, input {
+      padding: 4px;
+      margin-left: 8px;
+    }
+    button {
+      margin-top: 15px;
+      padding: 8px 12px;
+      background-color: #0066cc;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+    }
+    #results {
+      margin-top: 20px;
+      padding: 10px;
+      background: #fff;
+      border: 1px solid #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>ホワイトアウトサバイバル：レベルアップ計算機</h1>
+  <div>
+    <label>
+      建物種別:
+      <select id="buildingType">
+        <option value="兵舎">兵舎</option>
+        <option value="溶解炉">溶解炉</option>
+        <option value="司令部" selected>司令部</option>
+        <option value="科学研究所">科学研究所</option>
+        <option value="大使館">大使館</option>
+        <option value="倉庫">倉庫</option>
+        <option value="城壁">城壁</option>
+      </select>
+    </label>
+  </div>
+  <div>
+    <label>
+      現在レベル:
+      <input type="number" id="currentLevel" value="1" min="1">
+    </label>
+  </div>
+  <div>
+    <label>
+      建築速度加速量 (%):
+      <input type="number" id="baseSpeed" value="0" min="0">
+    </label>
+  </div>
+  <div>
+    <label>
+      バフ選択:
+      <select id="buffSelect">
+        <option value="10">+10%</option>
+        <option value="20">+20%</option>
+      </select>
+    </label>
+  </div>
+  <div>
+    <label>
+      ペットスキル選択:
+      <select id="petSkill">
+        <option value="1">レベル 1 (5%)</option>
+        <option value="2">レベル 2 (7%)</option>
+        <option value="3">レベル 3 (9%)</option>
+        <option value="4">レベル 4 (12%)</option>
+        <option value="5">レベル 5 (15%)</option>
+      </select>
+    </label>
+  </div>
+  <div>
+    <label>
+      ジンマンスキルレベル:
+      <select id="ginmanSkill">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+    </label>
+  </div>
+  <div>
+    <button onclick="calculate()">計算する</button>
+  </div>
+  <hr>
+  <div id="results">
+    <!-- 計算結果がここに表示されます -->
+  </div>
+
+  <script>
+    // ★ 1. データの用意 ★
+    // ここでは司令部のレベル別の必要素材（素材の合計）と建造時間（秒）をサンプルデータとして用意
+    const buildingData = {
+      "司令部": {
+        "levels": {
+          "1": { "materials": 80, "time": 2 },         // 00:00:02
+          "2": { "materials": 125, "time": 8 },        // 00:00:08
+          "3": { "materials": 565, "time": 35 },       // 00:00:35
+          "4": { "materials": 1450, "time": 105 },     // 00:01:45 → 1分45秒
+          "5": { "materials": 6300, "time": 215 },     // 00:03:35 → 3分35秒
+          "6": { "materials": 16270, "time": 430 },    // 00:07:10
+          "7": { "materials": 60000, "time": 840 },    // 00:14:00
+          "8": { "materials": 109400, "time": 1260 },  // 00:21:00
+          "9": { "materials": 225100, "time": 1920 },  // 00:32:00
+          "10": { "materials": 400000, "time": 2580 }  // 00:43:00
+          // … 他レベルも追加可能
+        }
+      },
+      // サンプルとしてその他の建物は簡易データ
+      "兵舎": {
+        "levels": {
+          "1": { "materials": 50, "time": 30 },
+          "2": { "materials": 100, "time": 60 }
+        }
+      },
+      "溶解炉": {
+        "levels": {
+          "1": { "materials": 60, "time": 40 }
+        }
+      },
+      "科学研究所": {
+        "levels": {
+          "1": { "materials": 70, "time": 50 }
+        }
+      },
+      "大使館": {
+        "levels": {
+          "1": { "materials": 80, "time": 60 }
+        }
+      },
+      "倉庫": {
+        "levels": {
+          "1": { "materials": 90, "time": 70 }
+        }
+      },
+      "城壁": {
+        "levels": {
+          "1": { "materials": 100, "time": 80 }
+        }
+      }
+    };
+
+    // ペットスキルのボーナス（レベルごとに加速率：レベル 1:5%、2:7%、3:9%、4:12%、5:15%）
+    const petSkillBonusMap = {
+      "1": 5,
+      "2": 7,
+      "3": 9,
+      "4": 12,
+      "5": 15
+    };
+
+    // ★ 2. 補助関数：秒数を hh:mm:ss に変換 ★
+    function formatTime(seconds) {
+      let h = Math.floor(seconds / 3600);
+      let m = Math.floor((seconds % 3600) / 60);
+      let s = Math.floor(seconds % 60);
+      // 時間がない場合は mm:ss 形式にする
+      return (h > 0 ? String(h).padStart(2, '0') + ':' : '') +
+             String(m).padStart(2, '0') + ':' +
+             String(s).padStart(2, '0');
+    }
+
+    // ★ 3. JS計算ロジック ★
+    function calculate() {
+      // 入力値の取得
+      const buildingType = document.getElementById('buildingType').value;
+      const currentLevel = parseInt(document.getElementById('currentLevel').value);
+      const baseSpeed = parseFloat(document.getElementById('baseSpeed').value) || 0;
+      const buffValue = parseFloat(document.getElementById('buffSelect').value) || 0;
+      const petSkillLevel = document.getElementById('petSkill').value;
+      const petBonus = petSkillBonusMap[petSkillLevel] || 0;
+      const ginmanSkillLevel = parseInt(document.getElementById('ginmanSkill').value);
+
+      // 現在レベル＋1のデータを取得
+      const nextLevel = currentLevel + 1;
+      const building = buildingData[buildingType];
+      if (!building || !building.levels[nextLevel]) {
+        document.getElementById('results').innerHTML = `<p>レベル  のデータがありません。</p>`;
+        return;
+      }
+      const levelData = building.levels[nextLevel];
+      const baseMaterials = levelData.materials;
+      const baseTime = levelData.time; // 秒単位
+
+      // 素材のバフ効果（ジンマンスキル：スキルレベル×3%の効果）
+      // ※ここでは素材を (1 - ginmanSkillLevel×0.03) 倍とする例
+      const materialsBuffed = Math.round(baseMaterials * (1 - (ginmanSkillLevel * 0.03)));
+
+      // 建築速度に関する総加速値の計算
+      // 入力値（建築速度加速量）+ バフ選択の値 + ペットスキルの加速値 + (ジンマンスキルレベル×3)
+      const totalTimeBonus = baseSpeed + buffValue + petBonus + (ginmanSkillLevel * 3);
+
+      // 建築時間（バフなし）はそのままの秒数
+      // 建築時間 (各種バフ適用) = 基本時間 ÷ (1 + 総加速値/100)
+      const timeWithBuff = baseTime / (1 + totalTimeBonus / 100);
+      // さらに20%時間短縮した場合 = 上記の値に 0.8 倍
+      const timeWithBuffExtra = timeWithBuff * 0.8;
+
+      // ★ 4. 結果の表示 ★
+      let resultHTML = `<h2>結果 （レベル ）</h2>`;
+      resultHTML += `<p>必要な素材 (バフなし): </p>`;
+      resultHTML += `<p>必要な素材 (ジンマンバフ適用): </p>`;
+      resultHTML += `<p>建築時間 (バフなし): </p>`;
+      resultHTML += `<p>建築時間 (各種バフ適用): </p>`;
+      resultHTML += `<p>建築時間 (さらに20%短縮): </p>`;
+
+      document.getElementById('results').innerHTML = resultHTML;
+    }
+  </script>
+</body>
+</html>
